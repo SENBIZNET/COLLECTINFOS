@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    @apply h-full overflow-x-hidden;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #root {
+    @apply min-h-full flex flex-col;
+  }
+}
+
+@layer utilities {
+  .clip-hexagon {
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+}
