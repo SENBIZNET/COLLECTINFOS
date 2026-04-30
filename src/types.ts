@@ -18,6 +18,10 @@ export interface InfoPost {
   price?: number;
   status: 'published' | 'pending' | 'draft' | 'sold';
   tags: string[];
+  author_avatar?: string;
+  photos?: string[];
+  videos?: string[];
+  docs?: string[];
 }
 
 export type Category = 'Experts' | 'Médias' | 'Organisations' | 'Particuliers';
