@@ -1,30 +1,21 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import ReactMarkdown from 'react-markdown';
+import React, { useState } from 'react';
 import { jsPDF } from "jspdf";
-import { useTranslation } from 'react-i18next';
 import { 
-  Paperclip, Search, Menu, X, Plus, ChevronRight, Filter, Clock, User, Tag, 
-  Info as InfoIcon, Newspaper, BookOpen, ArrowRight, ArrowLeft, GraduationCap, 
-  Globe2, Building2, Users, Home, Compass, PlusCircle, CircleUser, ShieldCheck, 
-  Mic2, Tv2, Camera, Globe, ShoppingBag, Send, ChevronDown, Phone, Facebook, 
-  Twitter, Instagram, Linkedin, Youtube, Play, Upload, Wallet, CheckCircle2, 
-  AlertCircle, FileText, LayoutDashboard, Video, DollarSign, MoreVertical, 
-  Download, XCircle, Calendar, Eye, CreditCard, Receipt, Package, AlertTriangle, 
-  RefreshCw, Settings, Lock, Trash2, Edit 
+  CircleUser, 
+  CheckCircle2 
 } from 'lucide-react';
 
-import { MOCK_INFOS, CATEGORIES, MOCK_PROFILES, MOCK_MARKETPLACE, EXCHANGE_RATES, MOCK_VIDEOS, TICKER_IMAGES, COUNTRIES, CITIES_BY_COUNTRY, TERMS_TEXT } from './constants';
-import { InfoPost, Category, UserProfile, UserRole, OrderRequest, Currency } from './types';
+// --- TYPES ---
+type AppView = 'HOME' | 'AUTH' | 'DASHBOARD' | 'ADMIN_DASHBOARD';
+type UserRole = 'JOURNALISTE' | 'MEDIAS' | 'STAFF' | 'ADMIN';
 
-// URL de votre serveur sur Render
+// --- CONFIGURATION ---
 const API_URL = "https://collectinfos.onrender.com";
 
+// --- UTILITAIRES ---
 const generateContractPDF = (userName: string, userEmail: string, userRole: string) => {
   const doc = new jsPDF();
   const date = new Date().toLocaleDateString('fr-FR');
-  const transactionId = Math.random().toString(36).substring(7).toUpperCase();
   doc.setFontSize(18);
   doc.text("CONTRAT COLLECTINFOS", 105, 20, { align: "center" });
   doc.setFontSize(12);
@@ -34,7 +25,7 @@ const generateContractPDF = (userName: string, userEmail: string, userRole: stri
   doc.save(`Contrat_${userName}.pdf`);
 };
 
-// --- COMPOSANT AUTH (CORRIGÉ POUR ÉVITER L'ERREUR 405) ---
+// --- COMPOSANT AUTH ---
 const AuthForm = ({ type = 'LOGIN', onCancel, onNavigate, onLogin }: any) => {
   const [authType, setAuthType] = useState<'LOGIN' | 'SIGNUP'>(type);
   const [role, setRole] = useState<UserRole>('JOURNALISTE');
@@ -82,20 +73,53 @@ const AuthForm = ({ type = 'LOGIN', onCancel, onNavigate, onLogin }: any) => {
         {authType === 'LOGIN' ? 'Connexion Staff' : 'Inscription'}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100">{error}</div>}
-        {authType === 'SIGNUP' && (
-          <input className="w-full p-4 bg-slate-50 rounded-xl border-none font-bold" placeholder="Nom complet" onChange={e => setFormData({...formData, name: e.target.value})} required />
+        {error && (
+          <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100">
+            {error}
+          </div>
         )}
-        <input className="w-full p-4 bg-slate-50 rounded-xl border-none font-bold" type="email" placeholder="Email" onChange={e => setFormData({...formData, email: e.target.value})} required />
-        <input className="w-full p-4 bg-slate-50 rounded-xl border-none font-bold" type="password" placeholder="Mot de passe" onChange={e => setFormData({...formData, password: e.target.value})} required />
-        <button type="submit" disabled={isLoading} className="w-full p-4 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest hover:bg-indigo-600 transition-all">
+        {authType === 'SIGNUP' && (
+          <input 
+            className="w-full p-4 bg-slate-50 rounded-xl border-none font-bold" 
+            placeholder="Nom complet" 
+            onChange={e => setFormData({...formData, name: e.target.value})} 
+            required 
+          />
+        )}
+        <input 
+          className="w-full p-4 bg-slate-50 rounded-xl border-none font-bold" 
+          type="email" 
+          placeholder="Email" 
+          onChange={e => setFormData({...formData, email: e.target.value})} 
+          required 
+        />
+        <input 
+          className="w-full p-4 bg-slate-50 rounded-xl border-none font-bold" 
+          type="password" 
+          placeholder="Mot de passe" 
+          onChange={e => setFormData({...formData, password: e.target.value})} 
+          required 
+        />
+        <button 
+          type="submit" 
+          disabled={isLoading} 
+          className="w-full p-4 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest hover:bg-indigo-600 transition-all disabled:opacity-50"
+        >
           {isLoading ? 'Chargement...' : 'Valider'}
         </button>
       </form>
-      <button onClick={() => setAuthType(authType === 'LOGIN' ? 'SIGNUP' : 'LOGIN')} className="w-full mt-4 text-sm font-bold text-indigo-600">
+      <button 
+        onClick={() => setAuthType(authType === 'LOGIN' ? 'SIGNUP' : 'LOGIN')} 
+        className="w-full mt-4 text-sm font-bold text-indigo-600 hover:underline"
+      >
         {authType === 'LOGIN' ? "Créer un compte" : "Déjà membre ? Connectez-vous"}
       </button>
-      <button onClick={onCancel} className="w-full mt-2 text-xs text-slate-400 font-bold uppercase">Annuler</button>
+      <button 
+        onClick={onCancel} 
+        className="w-full mt-2 text-xs text-slate-400 font-bold uppercase hover:text-slate-600"
+      >
+        Annuler
+      </button>
     </div>
   );
 };
@@ -106,34 +130,70 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
 
   return (
-    <div className="min-h-screen bg-[#FDFDFF] font-sans">
+    <div className="min-h-screen bg-[#FDFDFF] font-sans text-slate-900">
+      {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b z-50 p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('HOME')}>
-            <img src="/uploads/collectinfo.jpg" className="w-8 h-8 rounded" alt="logo" />
+          <div 
+            className="flex items-center gap-2 cursor-pointer" 
+            onClick={() => setView('HOME')}
+          >
+            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-bold text-xs">CI</div>
             <span className="font-black tracking-tighter text-xl">COLLECTINFOS</span>
           </div>
-          <button onClick={() => setView('AUTH')} className="bg-slate-900 text-white px-6 py-2 rounded-full font-bold text-sm">
+          <button 
+            onClick={() => setView('AUTH')} 
+            className="bg-slate-900 text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-indigo-600 transition-colors"
+          >
             ACCÈS STAFF
           </button>
         </div>
       </nav>
 
+      {/* Contenu Principal */}
       <main className="pt-32 pb-20 px-6">
         {view === 'AUTH' ? (
-          <AuthForm onCancel={() => setView('HOME')} onNavigate={setView} onLogin={setUser} />
+          <AuthForm 
+            onCancel={() => setView('HOME')} 
+            onNavigate={setView} 
+            onLogin={setUser} 
+          />
         ) : view === 'ADMIN_DASHBOARD' || view === 'DASHBOARD' ? (
-          <div className="text-center py-20">
-            <h2 className="text-4xl font-black mb-4">Bienvenue, {user?.name || 'Utilisateur'}</h2>
-            <p className="text-slate-500 mb-8">Votre espace de gestion est prêt.</p>
-            <button onClick={() => setView('HOME')} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold">Retour à l'accueil</button>
+          <div className="text-center py-20 max-w-2xl mx-auto">
+            <CheckCircle2 size={64} className="text-emerald-500 mx-auto mb-6" />
+            <h2 className="text-4xl font-black mb-4">Bienvenue, {user?.name || 'Administrateur'}</h2>
+            <p className="text-slate-500 mb-8 text-lg">Votre espace de gestion est prêt et sécurisé.</p>
+            <div className="flex flex-col gap-3">
+               <button 
+                onClick={() => setView('HOME')} 
+                className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-lg"
+              >
+                Accéder au Dashboard
+              </button>
+              <button 
+                onClick={() => { setUser(null); setView('HOME'); }} 
+                className="text-slate-400 font-bold text-sm uppercase tracking-widest"
+              >
+                Déconnexion
+              </button>
+            </div>
           </div>
         ) : (
           <div className="text-center py-20 max-w-4xl mx-auto">
-            <h1 className="text-6xl md:text-8xl font-black text-slate-900 mb-6 tracking-tighter uppercase">L'info brute,<br/><span className="text-indigo-600">certifiée.</span></h1>
-            <p className="text-xl text-slate-500 mb-12 italic">"Le premier réseau de correspondants locaux en temps réel."</p>
+            <h1 className="text-6xl md:text-8xl font-black text-slate-900 mb-6 tracking-tighter uppercase leading-none">
+              L'info brute,<br/>
+              <span className="text-indigo-600">certifiée.</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-slate-500 mb-12 italic max-w-2xl mx-auto">
+              "Le premier réseau de correspondants locaux en temps réel pour une information sans filtre."
+            </p>
             <div className="flex justify-center gap-4">
-              <button onClick={() => setView('AUTH')} className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black shadow-xl hover:bg-indigo-600 transition-all">DÉMARRER</button>
+              <button 
+                onClick={() => setView('AUTH')} 
+                className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black shadow-2xl hover:bg-indigo-600 hover:-translate-y-1 transition-all"
+              >
+                DÉMARRER MAINTENANT
+              </button>
             </div>
           </div>
         )}
