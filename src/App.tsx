@@ -1025,8 +1025,9 @@ const AuthForm = ({ type = 'LOGIN', defaultRole, onCancel, onNavigate, onLogin }
 
     setIsLoading(true);
     try {
-      const endpoint = authType === 'LOGIN' ? '/api/auth/login' : '/api/auth/register';
-      const body = authType === 'LOGIN' 
+const endpoint = authType === 'LOGIN' 
+  ? 'https://collectinfos.onrender.com/api/auth/login' 
+  : 'https://collectinfos.onrender.com/api/auth/register      const body = authType === 'LOGIN' 
         ? { email: formData.email, password: formData.password }
         : { ...formData, role };
 
